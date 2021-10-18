@@ -21,7 +21,6 @@ def is_price_right(ticker, date):
     symbol = ticker["symbol"]
     actual_price = main.get_price(symbol = symbol, date = date)
     reported_price = ticker["price"]
-    #import ipdb; ipdb.set_trace()
     return actual_price == reported_price
 
 def test_portfolio():

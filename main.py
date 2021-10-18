@@ -38,6 +38,17 @@ def get_today():
 def to_iso8601(date):
     return date.isoformat()
 
+def generate_price_deterministically(symbol, date):
+    seed = symbol + str(date)
+    random.seed(seed)
+    random_integer = random.randint(1, 1000)
+    with_decimal = random_integer / 10
+    string_number = str(with_decimal)
+    return string_number
+
+def get_price(symbol, date):
+    return generate_price_deterministically(symbol, date)
+
 def get_ticker_symbols_in_portfolio(user_token):
     seed = user_token
     random.seed(seed)
@@ -69,27 +80,9 @@ def verify_password(user_token, _):
 def get_user_token(auth):
     return auth.current_user()
 
-@app.route('/tickers')
-@auth.login_required
-def handle_get_portfolio():
-    user_token = get_user_token(auth)
-    portfolio_snapshot = get_portfolio_snapshot(user_token)
-    return jsonify(portfolio_snapshot)
-
 def date_with_days_subtracted(date, days_to_subtract):
     timedelta = datetime.timedelta(days=days_to_subtract)
     return date - timedelta
-
-def generate_price_deterministically(symbol, date):
-    seed = symbol + str(date)
-    random.seed(seed)
-    random_integer = random.randint(1, 1000)
-    with_decimal = random_integer / 10
-    string_number = str(with_decimal)
-    return string_number
-
-def get_price(symbol, date):
-    return generate_price_deterministically(symbol, date)
 
 def get_data_point_for_ticker_and_date(ticker_symbol, date):
     data_point = {
@@ -97,6 +90,13 @@ def get_data_point_for_ticker_and_date(ticker_symbol, date):
         "price": get_price(symbol = ticker_symbol, date = date)
     }
     return data_point
+
+@app.route('/tickers')
+@auth.login_required
+def handle_get_portfolio():
+    user_token = get_user_token(auth)
+    portfolio_snapshot = get_portfolio_snapshot(user_token)
+    return jsonify(portfolio_snapshot)
 
 @app.route('/tickers/<ticker_symbol>/history')
 @auth.login_required
