@@ -30,5 +30,6 @@ python3 main.py
 To make a query:
 
 ```
-curl "127.0.0.1:5000/tickers" -u "some_user_token:"
+USER_TOKEN=123
+curl "127.0.0.1:5000/tickers" -u "$USER_TOKEN:"
 ```
