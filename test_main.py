@@ -19,9 +19,10 @@ def http_get_portfolio(user_token):
 
 def is_price_right(ticker, date):
     symbol = ticker["symbol"]
-    actual_price = main.get_price_for_symbol_at_date(symbol, date)
+    actual_price = main.get_price(symbol = symbol, date = date)
     reported_price = ticker["price"]
-    assert actual_price == reported_price
+    #import ipdb; ipdb.set_trace()
+    return actual_price == reported_price
 
 def test_portfolio():
     user_token = "123"
@@ -35,8 +36,8 @@ def test_portfolio():
         assert is_string(ticker["symbol"])
         assert "price" in ticker
         assert is_string(ticker["price"])
-        current_date = main.get_current_date()
-        assert is_price_right(ticker, current_date)
+        today_date = main.get_today()
+        assert is_price_right(ticker, today_date)
 
     expected_ticker_symbols_in_portfolio = \
         main.get_ticker_symbols_in_portfolio(user_token)
@@ -61,8 +62,8 @@ def test_history():
         is_string = lambda x: type(x) is str
         assert "date" in data_point
         assert "price" in data_point
-        date = date_point["date"]
-        price = date_point["price"]
+        date = data_point["date"]
+        price = data_point["price"]
         assert is_string(date)
         assert is_string(price)
         assert is_price_right({"symbol": symbol, "price": price}, date)
