@@ -1,10 +1,20 @@
 import main
+from toolz.curried import pipe, map, sliding_window, concat
 from operator import itemgetter
+import datetime
 
 def http_get_history_for_symbol(user_token, symbol):
     with main.app.test_client() as c:
         response = c.get(
             f'/tickers/{symbol}/history',
+            auth = (user_token, ""),
+        )
+        return response
+
+def http_get_history_for_symbol_with_page(user_token, symbol, page):
+    with main.app.test_client() as c:
+        response = c.get(
+            f'/tickers/{symbol}/history?page={page}',
             auth = (user_token, ""),
         )
         return response
@@ -69,3 +79,35 @@ def test_history():
     history_in_descending_order = \
         sorted(history, key=itemgetter("date"), reverse=True)
     assert history_in_descending_order == history
+
+def test_pagination():
+    user_token = "444"
+    symbol = "PYPL"
+    def get_page(n):
+        response = http_get_history_for_symbol_with_page(
+            user_token, symbol, page = n
+        )
+        return response.get_json()
+    concatenated_subsequent_pages = pipe(
+        range(1,3),
+        map(get_page),
+        concat,
+        list
+    )
+    date_strings = map(itemgetter('date'), concatenated_subsequent_pages)
+    parse_date = lambda date_str: \
+        datetime.datetime.fromisoformat(date_str).date()
+    dates = map(parse_date, date_strings)
+    is_difference_between_dates_one_day = lambda two_dates: \
+        (two_dates[0] - two_dates[1]) == datetime.timedelta(days=1)
+    difference_between_every_two_subsequent_datums_is_one_day = \
+        pipe(
+            dates,
+            sliding_window(2),
+            map(is_difference_between_dates_one_day),
+            all,
+        )
+
+    assert difference_between_every_two_subsequent_datums_is_one_day
+
+
