@@ -1,8 +1,8 @@
-from flask import Flask, jsonify, abort
+from flask import Flask, jsonify, abort, request
 from flask_httpauth import HTTPBasicAuth
 import datetime
 import random
-from toolz.curried import pipe, map, partial
+from toolz.curried import pipe, map, partial, tail
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -98,22 +98,33 @@ def handle_get_portfolio():
     portfolio_snapshot = get_portfolio_snapshot(user_token)
     return jsonify(portfolio_snapshot)
 
+def parse_pagination_parameter(request):
+    page = request.args.get('page')
+    try:
+        return int(page)
+    except:
+        return
+
 @app.route('/tickers/<ticker_symbol>/history')
 @auth.login_required
 def handle_get_history(ticker_symbol):
     is_known_ticker = ticker_symbol in known_ticker_symbols
     if not is_known_ticker:
         abort(404)
+    pagination_parameter = parse_pagination_parameter(request)
+    page = pagination_parameter or 1
     user_token = get_user_token(auth)
     today = get_today()
-    last_90_days = pipe(
-        range(90),
+    whole_date_range = range(90 * page)
+    a_90_day_page = pipe(
+        whole_date_range,
+        tail(90),
         map(partial(date_with_days_subtracted, today)),
     )
     get_data_point_for_date = \
         partial(get_data_point_for_ticker_and_date, ticker_symbol)
     data_points = pipe(
-        last_90_days,
+        a_90_day_page,
         map(get_data_point_for_date),
         list
     )
