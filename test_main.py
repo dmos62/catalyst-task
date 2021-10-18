@@ -88,16 +88,27 @@ def test_pagination():
             user_token, symbol, page = n
         )
         return response.get_json()
+    number_of_pages_to_get = 3
+    inclusive_range = lambda a,b: range(a,b+1)
+    pages_to_get = inclusive_range(1, number_of_pages_to_get)
     concatenated_subsequent_pages = pipe(
-        range(1,3),
+        pages_to_get,
         map(get_page),
         concat,
         list
     )
-    date_strings = map(itemgetter('date'), concatenated_subsequent_pages)
+
+    expected_number_of_datums = number_of_pages_to_get * 90
+    number_of_datums = len(concatenated_subsequent_pages)
+
+    assert expected_number_of_datums == number_of_datums
     parse_date = lambda date_str: \
         datetime.datetime.fromisoformat(date_str).date()
-    dates = map(parse_date, date_strings)
+    dates = pipe(
+        concatenated_subsequent_pages,
+        map(itemgetter('date')),
+        map(parse_date),
+    )
     is_difference_between_dates_one_day = lambda two_dates: \
         (two_dates[0] - two_dates[1]) == datetime.timedelta(days=1)
     difference_between_every_two_subsequent_datums_is_one_day = \
